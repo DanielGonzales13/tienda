@@ -107,15 +107,14 @@ export default function CarritoPage() {
   const handleRemoveItem = async (productId: string, cantidad = 1) => {
     try {
       // Enviar al servidor
-      const response = await fetch(`${urlBackend}/carrito`, {
-        method: "PATCH",
+      const response = await fetch(`${urlBackend}/carrito/remove-item`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           id_usuario: Number.parseInt(id_usuario),
-          id_producto: Number.parseInt(productId),
-          cantidad: cantidad -1,
+          id_producto: Number.parseInt(productId)
         }),
       })
 

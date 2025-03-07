@@ -49,7 +49,7 @@ export default function ProductList() {
     try {
       // Agregar al estado local primero para UI inmediata
       addToCart(product)
-      var id_usuario:any = localStorage.getItem("id_usuario");
+      const id_usuario:any = localStorage.getItem("id_usuario");
       // Luego enviar al servidor
       const response = await fetch(urlBackend + "/carrito", {
         method: "POST",

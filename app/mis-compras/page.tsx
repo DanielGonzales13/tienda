@@ -51,7 +51,7 @@ export default function MisComprasPage() {
     async function fetchOrders() {
 
       try {
-        var id_usuario:any = localStorage.getItem("id_usuario")
+        const id_usuario:any = localStorage.getItem("id_usuario")
         const response = await fetch(`${urlBackend}/orden-compra/${id_usuario}`)
 
         if (!response.ok) {

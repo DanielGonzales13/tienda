@@ -60,7 +60,7 @@ export default function ProductDetail({ id }: { id: string }) {
       for (let i = 0; i < quantity; i++) {
         addToCart(product)
       }
-      var id_usuario:any = localStorage.getItem("id_usuario");
+      const id_usuario:any = localStorage.getItem("id_usuario");
       // Luego enviar al servidor
       const response = await fetch(urlBackend + "/carrito", {
         method: "POST",
