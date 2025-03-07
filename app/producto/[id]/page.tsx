@@ -1,3 +1,4 @@
+import ChatWidget from "@/components/chat-widget"
 import NavBar from "@/components/nav-bar"
 import ProductDetail from "@/components/product-detail"
 
@@ -14,6 +15,7 @@ export default function ProductPage({ params }: ProductPageProps) {
       <div className="container px-4 py-8 mx-auto">
         <ProductDetail id={params.id} />
       </div>
+      <ChatWidget />
     </div>
   )
 }
