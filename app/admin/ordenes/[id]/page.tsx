@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle, ArrowLeft, Calendar, CreditCard, MapPin, User } from 'lucide-react'
 import Link from "next/link"
-import Image from "next/image"
 import { formatDate } from "@/lib/utils"
 import { urlBackend } from "@/lib/var"
 

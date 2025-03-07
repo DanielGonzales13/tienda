@@ -39,13 +39,12 @@ export default function NavBar() {
   const [cartData, setCartData] = useState<CartData | null>(null)
   const [mounted, setMounted] = useState(false)
 
- const id_usuario:any = localStorage.getItem("id_usuario")
  
  
    const fetchCart = async () => {
- 
+    const id_usuario:any = localStorage.getItem("id_usuario")
      try{
-       const response = await fetch(`${urlBackend}/carrito/${id_usuario}`)
+       const response = await fetch(`${urlBackend}/carrito/${id_usuario}`) 
  
        if(!response.ok)
        {

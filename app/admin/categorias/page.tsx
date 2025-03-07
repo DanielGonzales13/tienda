@@ -56,7 +56,7 @@ export default function CategoriasPage() {
       } else {
         setCategorias([])
       }
-    } catch (err:any) {
+    } catch (err) {
       setError("No se pudieron cargar las categorías. Verifica tu conexión a internet.")
     } finally {
       setIsLoading(false)
@@ -93,8 +93,7 @@ export default function CategoriasPage() {
       setNuevaCategoria("")
       setDialogOpen(false)
       alert(data.mensaje || "Categoría creada con éxito")
-    } catch (err:any) {
-      console.log(JSON.stringify(err));
+    } catch (err) {
       console.error("Error detallado:", err)
       //alert("Error al crear la categoría. Verifica tu conexión a internet.")
     } finally {
@@ -120,7 +119,7 @@ export default function CategoriasPage() {
               Nueva Categoría
             </Button>
           </DialogTrigger>
-          <DialogContent onClose={() => setDialogOpen(false)}>
+          <DialogContent onCloseAutoFocus={() => setDialogOpen(false)}>
             <DialogHeader>
               <DialogTitle>Nueva Categoría</DialogTitle>
               <DialogDescription>Crea una nueva categoría para tus productos</DialogDescription>
