@@ -132,7 +132,11 @@ export default function ChatWidget() {
             },
             {
               role: "user",
-              content: "Para ir a producto colocar, la dirección: "+ url +"/producto/:id_producto" ,
+              content: "Para ir a producto colocar, la dirección: "+ url +"/producto/:id_producto  cambia :id_producto por el id del producto" ,
+            },
+            {
+              role: "user",
+              content: "Para ir al detalle de la orden colocar, la dirección: "+ url +"admin/ordenes/:id_orden  cambia :id_orden por el id de la orden" ,
             },
             {
               role: "user",

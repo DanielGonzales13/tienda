@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, Package, Tag, ShoppingBag, ShoppingCart } from "lucide-react"
+import ChatWidget from "@/components/chat-widget"
 
 export const metadata: Metadata = {
   title: "Admin - Panel de Administración",
@@ -94,6 +95,7 @@ export default function AdminLayout({
         {/* Main content */}
         <main className="flex-1 p-6">{children}</main>
       </div>
+            <ChatWidget />
     </div>
   )
 }
