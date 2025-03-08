@@ -136,7 +136,7 @@ export default function ChatWidget() {
             },
             {
               role: "user",
-              content: "Para ir al detalle de la orden colocar, la dirección: "+ url +"admin/ordenes/:id_orden  cambia :id_orden por el id de la orden" ,
+              content: "Para ir al detalle de la orden colocar, la dirección: "+ url + "/admin/ordenes/:id_orden  cambia :id_orden por el id de la orden" ,
             },
             {
               role: "user",
