@@ -1,7 +1,7 @@
 interface Window {
     jQuery: any
     $: any
-    aeropuertoData: string | null
+    Data: string | null
     dataDisponible: boolean
   }
   

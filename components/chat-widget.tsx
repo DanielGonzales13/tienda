@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react"
 import Script from "next/script"
 import $ from "jquery"
+import { urlBackend } from "@/lib/var"
 
 export default function ChatWidget() {
   const [isClient, setIsClient] = useState(false)
+ 
 
   useEffect(() => {
     setIsClient(true)
@@ -58,10 +60,10 @@ export default function ChatWidget() {
     $(chatButton).on("click", () => {
       $(chatContainer).toggle()
 
-      if (!window.aeropuertoData) {
-        $.get("https://api-consulta-aeropuerto.onrender.com/")
+      if (!window.Data) {
+        $.get(`${urlBackend}/api`)
           .done((data:any) => {
-            window.aeropuertoData = JSON.stringify(data)
+            window.Data = JSON.stringify(data)
             window.dataDisponible = true
           })
           .fail(() => {
@@ -79,8 +81,22 @@ export default function ChatWidget() {
     })
 
     function sendMessage() {
+
+      $.get(`${urlBackend}/api`)
+          .done((data:any) => {
+            window.Data = JSON.stringify(data)
+            window.dataDisponible = true
+          })
+          .fail(() => {
+            window.dataDisponible = false
+            $("#chat-messages").append(`<div class='bot-message'>Data no se encuentra disponible, favor validar</div>`)
+      })
+      const pathname = window.location.pathname;
+      const url = window.location.href.replace(pathname, '')
+
       const userText = $("#user-input").val()?.toString().trim() || ""
       if (userText === "") return
+      const id_user = localStorage.getItem("id_usuario");
 
       const loadingMessage = `<div class='bot-message typing-animation' id='loading-message'></div>`
       $("#chat-messages").append(`<div class='user-message'>${userText}</div>`)
@@ -104,11 +120,27 @@ export default function ChatWidget() {
             },
             {
               role: "user",
-              content: "Aquí están los datos que debes utilizar: https://tienda-black-nu.vercel.app/tienda" ,
+              content: "Aquí están los datos que debes utilizar: " + window.Data ,
             },
             {
               role: "user",
-              content: userText,
+              content: "Los valores de precios estan en quetzales (Q.)",
+            },
+            {
+              role: "user",
+              content: "Cuando respondas no utilices datos como ID.",
+            },
+            {
+              role: "user",
+              content: "Para ir a producto colocar, la dirección: "+ url +"/producto/:id_producto" ,
+            },
+            {
+              role: "user",
+              content: "Para ir a carrito colocar, la dirección: "+ url +"/carrito" ,
+            },
+            {
+              role: "user",
+              content: "Soy Usuario con id; " + id_user + ", esta es mi solicitud: " + userText,
             },
           ],
         }),
@@ -118,6 +150,7 @@ export default function ChatWidget() {
           $("#loading-message").remove()
           let message = data.choices[0].message.content.replace(/\n/g, "<br />")
           message = message.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+          message = message.replace(/\(?\b(https?:\/\/[^\s)]+)\)?/g, '<a href="$1" target="_blank" style="text-decoration:underline; color:blue">Aquí</a>');
           $("#chat-messages").append(`<div class='bot-message'>${message}</div>`)
           $("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight)
         })

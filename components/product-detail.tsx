@@ -106,7 +106,7 @@ export default function ProductDetail({ id }: { id: string }) {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">{product.nombre}</h1>
-            <p className="text-2xl font-medium mt-2">${product.precio.toFixed(2)}</p>
+            <p className="text-2xl font-medium mt-2">Q. {product.precio.toFixed(2)}</p>
           </div>
 
           <div className="prose prose-gray dark:prose-invert">

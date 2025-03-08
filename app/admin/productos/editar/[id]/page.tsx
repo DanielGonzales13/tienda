@@ -70,7 +70,7 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
           nombre: producto.nombre,
           cantidad: String(producto.cantidad || 100),
           precio: String(producto.precio),
-          id_categoria: String(producto.categoria.descripcion || 1),
+          id_categoria: String(producto.categoria.id_categoria || 1),
           descripcion: producto.descripcion || "",
           imagen: producto.imagen || "",
         })
