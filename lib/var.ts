@@ -1,1 +1,0 @@
-export const urlBackend = "https://ecommerce-backend-94h4.onrender.com";
