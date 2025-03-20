@@ -255,7 +255,7 @@ export default function ChatWidget() {
           }
 
           .bot-message {
-            background: #ffffff;
+            background: #000000;
             padding: 5px 10px;
             border-radius: 10px;
             margin: 5px 0;
