@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select"
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react"
+import { ArrowLeft, Loader2, AlertCircle, Tag, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { urlBackend } from "@/lib/var"
 
@@ -19,14 +19,23 @@ interface Categoria {
   descripcion: string
 }
 
+interface Promocion {
+  id_promocion: number
+  fecha_inicio: string
+  fecha_fin: string
+  descuento: number
+}
+
 interface Producto {
   id: string | number
   nombre: string
   cantidad: number
   precio: number
+  precio_real: number
   id_categoria: number
   descripcion: string
   imagen: string
+  promocion: Promocion | null
 }
 
 export default function EditarProductoPage({ params }: { params: { id: string } }) {
@@ -38,11 +47,20 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
   const [error, setError] = useState<string | null>(null)
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [loadingCategorias, setLoadingCategorias] = useState(true)
+  const [promocion, setPromocion] = useState<Promocion | null>(null)
+  const [isPromocionLoading, setIsPromocionLoading] = useState(false)
+  const [showPromocionForm, setShowPromocionForm] = useState(false)
+  const [promocionFormData, setPromocionFormData] = useState({
+    fecha_inicio: "",
+    fecha_fin: "",
+    descuento: "0",
+  })
 
   const [formData, setFormData] = useState({
     nombre: "",
     cantidad: "0",
     precio: "0",
+    precio_real: "0",
     id_categoria: "",
     descripcion: "",
     imagen: "",
@@ -69,10 +87,25 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
         setFormData({
           nombre: producto.nombre,
           cantidad: String(producto.cantidad || 100),
-          precio: String(producto.precio),
+          precio: String(producto.precio || 0),
+          precio_real: String(producto.precio_real || 0),
           id_categoria: String(producto.categoria.id_categoria || 1),
           descripcion: producto.descripcion || "",
           imagen: producto.imagen || "",
+        })
+
+        // Guardar la promoción si existe
+        setPromocion(producto.promocion)
+
+        // Inicializar el formulario de promoción con fechas por defecto
+        const today = new Date()
+        const twoWeeksLater = new Date(today)
+        twoWeeksLater.setDate(today.getDate() + 14)
+
+        setPromocionFormData({
+          fecha_inicio: today.toISOString().split("T")[0],
+          fecha_fin: twoWeeksLater.toISOString().split("T")[0],
+          descuento: "10",
         })
       } catch (err) {
         console.error("Error al cargar el producto:", err)
@@ -99,8 +132,6 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
         }
       } catch (err) {
         console.error("Error al cargar categorías:", err)
-        // Categorías de ejemplo para desarrollo
-        
       } finally {
         setLoadingCategorias(false)
       }
@@ -112,7 +143,13 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
+    console.log(`Cambiando ${name} a: ${value}`)
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handlePromocionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setPromocionFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSelectChange = (value: string) => {
@@ -128,9 +165,11 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
       const productoData = {
         ...formData,
         cantidad: Number.parseInt(formData.cantidad),
-        precio: Number.parseFloat(formData.precio),
+        precio: Number.parseFloat(formData.precio_real),
         id_categoria: Number.parseInt(formData.id_categoria),
       }
+
+      console.log("Enviando datos:", productoData)
 
       const response = await fetch(`${urlBackend}/producto/${id}`, {
         method: "PUT",
@@ -152,6 +191,73 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
       alert("Error al actualizar el producto. Inténtalo de nuevo.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAddPromocion = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsPromocionLoading(true)
+
+    try {
+      const promocionData = {
+        fecha_inicio: promocionFormData.fecha_inicio,
+        fecha_fin: promocionFormData.fecha_fin,
+        descuento: Number.parseInt(promocionFormData.descuento),
+        id_producto: Number.parseInt(id),
+      }
+
+      const response = await fetch(`${urlBackend}/promocion/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(promocionData),
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al agregar la promoción")
+      }
+
+      const data = await response.json()
+      alert(data.mensaje || "Promoción agregada con éxito")
+
+      // Actualizar el estado de la promoción
+      setPromocion({
+        id_promocion: data.data.id_promocion || 0,
+        ...promocionData,
+      })
+      setShowPromocionForm(false)
+    } catch (err) {
+      console.error("Error al agregar la promoción:", err)
+      alert("Error al agregar la promoción. Inténtalo de nuevo.")
+    } finally {
+      setIsPromocionLoading(false)
+    }
+  }
+
+  const handleDeletePromocion = async () => {
+    if (!confirm("¿Estás seguro de que deseas eliminar esta promoción?")) {
+      return
+    }
+
+    setIsPromocionLoading(true)
+
+    try {
+      const response = await fetch(`${urlBackend}/promocion/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar la promoción")
+      }
+
+      alert("Promoción eliminada con éxito")
+      setPromocion(null)
+    } catch (err) {
+      console.error("Error al eliminar la promoción:", err)
+      alert("Error al eliminar la promoción. Inténtalo de nuevo.")
+    } finally {
+      setIsPromocionLoading(false)
     }
   }
 
@@ -220,15 +326,15 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="precio">Precio</Label>
+                <Label htmlFor="precio_real">Precio</Label>
                 <Input
-                  id="precio"
-                  name="precio"
+                  id="precio_real"
+                  name="precio_real"
                   type="number"
                   step="0.01"
                   min="0"
                   placeholder="0.00"
-                  value={formData.precio}
+                  value={formData.precio_real}
                   onChange={handleChange}
                   required
                 />
@@ -251,12 +357,7 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
               <div className="space-y-2">
                 <Label htmlFor="categoria">Categoría</Label>
                 {loadingCategorias ? (
-                  <Select
-                    value=""
-                    onValueChange={() => {}}
-                    defaultValue="Cargando categorías..."
-                    disabled={true}
-                  />
+                  <Select value="" onValueChange={() => {}} defaultValue="Cargando categorías..." disabled={true} />
                 ) : (
                   <Select
                     value={formData.id_categoria}
@@ -265,16 +366,15 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
                     required
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione Categoria"/>
-                      </SelectTrigger>  
+                      <SelectValue placeholder="Seleccione Categoria" />
+                    </SelectTrigger>
                     <SelectContent>
-                    {
-                      categorias.map(cat=>
-                          <SelectItem key={cat.id_categoria} value={cat.id_categoria.toString()}>
-                            {cat.descripcion}
-                          </SelectItem>                    
-                    )}
-                  </SelectContent>
+                      {categorias.map((cat) => (
+                        <SelectItem key={cat.id_categoria} value={cat.id_categoria.toString()}>
+                          {cat.descripcion}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 )}
               </div>
@@ -309,7 +409,114 @@ export default function EditarProductoPage({ params }: { params: { id: string } 
           </CardFooter>
         </form>
       </Card>
+
+      {/* Sección de Promociones */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestión de Promociones</CardTitle>
+          <CardDescription>Administra las promociones para este producto</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {promocion ? (
+            <div className="bg-muted p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium flex items-center">
+                    <Tag className="h-4 w-4 mr-2 text-primary" />
+                    Promoción Activa: {promocion.descuento}% de descuento
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Válida desde {new Date(promocion.fecha_inicio).toLocaleDateString()}
+                    hasta {new Date(promocion.fecha_fin).toLocaleDateString()}
+                  </p>
+                  <p className="text-sm mt-2">
+                    <span className="font-medium">Precio original:</span> Q.{formData.precio_real}
+                    <span className="mx-2">→</span>
+                    <span className="font-medium text-green-600">Precio con descuento:</span> Q.
+                    {(
+                      Number.parseFloat(formData.precio_real) -
+                      (Number.parseFloat(formData.precio_real) * promocion.descuento) / 100
+                    ).toFixed(2)}
+                  </p>
+                </div>
+                <Button variant="destructive" size="sm" onClick={handleDeletePromocion} disabled={isPromocionLoading}>
+                  {isPromocionLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Eliminar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : showPromocionForm ? (
+            <form onSubmit={handleAddPromocion} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fecha_inicio">Fecha de Inicio</Label>
+                  <Input
+                    id="fecha_inicio"
+                    name="fecha_inicio"
+                    type="date"
+                    value={promocionFormData.fecha_inicio}
+                    onChange={handlePromocionChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fecha_fin">Fecha de Fin</Label>
+                  <Input
+                    id="fecha_fin"
+                    name="fecha_fin"
+                    type="date"
+                    value={promocionFormData.fecha_fin}
+                    onChange={handlePromocionChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="descuento">Porcentaje de Descuento</Label>
+                  <Input
+                    id="descuento"
+                    name="descuento"
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={promocionFormData.descuento}
+                    onChange={handlePromocionChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setShowPromocionForm(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isPromocionLoading}>
+                  {isPromocionLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar Promoción"
+                  )}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-muted-foreground mb-4">Este producto no tiene promociones activas</p>
+              <Button onClick={() => setShowPromocionForm(true)}>
+                <Tag className="h-4 w-4 mr-2" />
+                Agregar Promoción
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
-

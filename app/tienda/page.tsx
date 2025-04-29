@@ -1,6 +1,7 @@
 import ProductList from "@/components/product-list"
 import NavBar from "@/components/nav-bar"
 import ChatWidget from "@/components/chat-widget"
+import Footer from "@/components/footer"
 
 export default function TiendaPage() {
   return (
@@ -11,6 +12,7 @@ export default function TiendaPage() {
         <ProductList />
       </div>
       <ChatWidget />
+      <Footer />
     </div>
   )
 }

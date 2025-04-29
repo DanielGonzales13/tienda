@@ -1,7 +1,7 @@
 interface Window {
     jQuery: any
     $: any
-    Data: string | null
+    Data: any
     dataDisponible: boolean
   }
   

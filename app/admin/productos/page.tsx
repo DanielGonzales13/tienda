@@ -5,19 +5,27 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Pencil, Trash2, Search, AlertCircle, Loader2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Search, AlertCircle, Loader2, CheckCircle, XCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import Image from "next/image"
 import { urlBackend } from "@/lib/var"
+
+interface Promocion {
+  id_promocion: number
+  fecha_inicio: string
+  fecha_fin: string
+  descuento: number
+}
 
 interface Producto {
   id: string | number
   nombre: string
   cantidad: number
   precio: number
-  id_categoria: number
+  precio_real: number
+  id_categoria: number | string
   descripcion: string
   imagen: string
+  promocion: Promocion | null
 }
 
 export default function ProductosPage() {
@@ -45,17 +53,19 @@ export default function ProductosPage() {
 
       const data = await response.json()
 
-      console.log(data);
+      console.log(data)
       // Adaptamos el formato de los datos para que coincida con nuestra interfaz
-    const productosFormateados = data.data.map((p: any) => ({
+      const productosFormateados = data.data.map((p: any) => ({
         id: p.id_producto,
         nombre: p.nombre,
-        cantidad: p.cantidad, // Valor por defecto si no existe
+        cantidad: p.cantidad,
+        precio_real: p.precio_real,
         precio: p.precio,
-        id_categoria: p.categoria.descripcion, // Valor por defecto si no existe
+        id_categoria: p.categoria.descripcion,
         descripcion: p.descripcion || "",
-        imagen:  p.imagen || "/placeholder.svg?height=100&width=100",
-    }))
+        imagen: p.imagen || "/placeholder.svg?height=100&width=100",
+        promocion: p.promocion, // Incluimos la información de promoción
+      }))
 
       setProductos(productosFormateados)
     } catch (err) {
@@ -155,8 +165,10 @@ export default function ProductosPage() {
                     <TableHead className="w-[80px]">Imagen</TableHead>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Precio</TableHead>
+                    <TableHead>Precio Oferta</TableHead>
                     <TableHead>Cantidad</TableHead>
                     <TableHead>Categoría</TableHead>
+                    <TableHead>Promoción</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -173,9 +185,25 @@ export default function ProductosPage() {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">{producto.nombre}</TableCell>
+                      <TableCell>Q.{producto.precio_real.toFixed(2)}</TableCell>
                       <TableCell>Q.{producto.precio.toFixed(2)}</TableCell>
                       <TableCell>{producto.cantidad}</TableCell>
                       <TableCell>{producto.id_categoria}</TableCell>
+                      <TableCell>
+                        {producto.promocion ? (
+                          <div className="flex items-center">
+                            <CheckCircle className="h-5 w-5 text-green-500 mr-1" />
+                            <span className="text-xs text-green-600 font-medium">
+                              {producto.promocion.descuento}% OFF
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <XCircle className="h-5 w-5 text-gray-400" />
+                            <span className="text-xs text-gray-500 ml-1">Sin promoción</span>
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Link href={`/admin/productos/editar/${producto.id}`}>
@@ -210,4 +238,3 @@ export default function ProductosPage() {
     </div>
   )
 }
-

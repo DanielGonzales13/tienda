@@ -160,6 +160,7 @@ export default function CarritoPage() {
         id_usuario: Number(id_usuario),
         metodo_de_pago: metodoPago,
         direccion_envio: direccionEnvio,
+        canal: "WEB",
       }
 
       const response = await fetch(`${urlBackend}/orden-compra`, {
