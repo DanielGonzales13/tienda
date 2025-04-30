@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/lib/cart-context"
-import { ChevronLeft, ChevronRight, Search, ShoppingBag, Tag, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, ShoppingBag, Tag } from "lucide-react"
 import { urlBackend } from "@/lib/var"
 
 interface Promotion {
@@ -45,19 +45,12 @@ export default function ProductList() {
   const { addToCart } = useCart()
   const [message, setMessage] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false)
-  const [showingRecommendations, setShowingRecommendations] = useState(false)
-  const [userId, setUserId] = useState<string | null>(null)
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1)
   const productsPerPage = 8
 
   useEffect(() => {
-    // Obtener ID de usuario del localStorage
-    const storedUserId = localStorage.getItem("id_usuario")
-    setUserId(storedUserId)
-
     async function fetchProducts() {
       try {
         const response = await fetch(urlBackend + "/producto")
@@ -90,11 +83,6 @@ export default function ProductList() {
   useEffect(() => {
     let result = products
 
-    // Si estamos mostrando recomendaciones, no aplicamos otros filtros
-    if (showingRecommendations) {
-      return
-    }
-
     // Filtrar por categoría
     if (selectedCategory !== null) {
       result = result.filter((product) => product.categoria.id_categoria === selectedCategory)
@@ -111,7 +99,7 @@ export default function ProductList() {
 
     setFilteredProducts(result)
     setCurrentPage(1) // Resetear a la primera página cuando cambian los filtros
-  }, [selectedCategory, products, searchTerm, showingRecommendations])
+  }, [selectedCategory, products, searchTerm])
 
   // Actualizar productos mostrados basados en la paginación
   useEffect(() => {
@@ -122,12 +110,10 @@ export default function ProductList() {
 
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategory(categoryId)
-    setShowingRecommendations(false)
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
-    setShowingRecommendations(false)
   }
 
   const handleAddToCart = async (product: Product) => {
@@ -161,81 +147,6 @@ export default function ProductList() {
     }
   }
 
-  // Función para obtener recomendaciones de IA
-  const getAIRecommendations = async () => {
-    const id_usuario = localStorage.getItem("id_usuario")
-
-    if (!id_usuario) {
-      setMessage("Debes iniciar sesión para obtener recomendaciones personalizadas")
-      setTimeout(() => setMessage(""), 3000)
-      return
-    }
-
-    setIsLoadingRecommendations(true)
-    setShowingRecommendations(true)
-
-    try {
-      const response = await fetch(`${window.location.origin}/api/recommendations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          products,
-          userId: id_usuario,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Error al obtener recomendaciones: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log(data);
-      if (data.error) {
-        throw new Error(data.error)
-      }
-
-      // Filtrar productos por IDs recomendados
-      const recommendedProducts = products.filter((product) => {
-        // Convertir ambos a string para comparación
-        return data.productIds.some((id : any) => String(id) === String(product.id_producto))
-      })
-
-      if (recommendedProducts.length === 0) {
-        setMessage("No se encontraron recomendaciones personalizadas. Mostrando productos destacados.")
-        setShowingRecommendations(false)
-
-        // Mostrar algunos productos aleatorios como fallback
-        const randomProducts = [...products].sort(() => 0.5 - Math.random()).slice(0, Math.min(8, products.length))
-
-        setFilteredProducts(randomProducts)
-      } else {
-        setFilteredProducts(recommendedProducts)
-        setCurrentPage(1)
-        setMessage(`Se encontraron ${recommendedProducts.length} productos recomendados para ti`)
-      }
-
-      setTimeout(() => setMessage(""), 3000)
-    } catch (err) {
-      console.error(err)
-      const errorMessage = err instanceof Error ? err.message : String(err)
-      setMessage(`Error: ${errorMessage}`)
-      setTimeout(() => setMessage(""), 5000)
-      setShowingRecommendations(false)
-
-      // Restaurar vista normal
-      if (selectedCategory !== null) {
-        const categoryProducts = products.filter((product) => product.categoria.id_categoria === selectedCategory)
-        setFilteredProducts(categoryProducts)
-      } else {
-        setFilteredProducts(products)
-      }
-    } finally {
-      setIsLoadingRecommendations(false)
-    }
-  }
-
   // Funciones de paginación
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage)
 
@@ -251,13 +162,6 @@ export default function ProductList() {
       setCurrentPage(currentPage - 1)
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
-  }
-
-  const resetFilters = () => {
-    setShowingRecommendations(false)
-    setSelectedCategory(null)
-    setSearchTerm("")
-    setFilteredProducts(products)
   }
 
   if (isLoading) {
@@ -296,9 +200,9 @@ export default function ProductList() {
         <div className="overflow-x-auto pb-2">
           <div className="flex space-x-2 min-w-max">
             <Button
-              variant={selectedCategory === null && !showingRecommendations ? "default" : "outline"}
+              variant={selectedCategory === null ? "default" : "outline"}
               className="rounded-full"
-              onClick={resetFilters}
+              onClick={() => handleCategorySelect(null)}
             >
               Todos
             </Button>
@@ -312,34 +216,9 @@ export default function ProductList() {
                 {category.descripcion}
               </Button>
             ))}
-            <Button
-              variant={showingRecommendations ? "default" : "outline"}
-              className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              onClick={getAIRecommendations}
-              disabled={isLoadingRecommendations}
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Recomendación según IA
-            </Button>
           </div>
         </div>
       </div>
-
-      {/* Indicador de recomendaciones */}
-      {showingRecommendations && (
-        <div className="mb-4 p-2 bg-purple-100 rounded-lg text-purple-800 text-sm flex items-center">
-          <Sparkles className="h-4 w-4 mr-2" />
-          Mostrando recomendaciones personalizadas basadas en tu historial
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto text-purple-800 hover:text-purple-900 hover:bg-purple-200"
-            onClick={resetFilters}
-          >
-            Limpiar
-          </Button>
-        </div>
-      )}
 
       {/* Contador de resultados */}
       <div className="mb-4 text-sm text-gray-500">
@@ -348,12 +227,7 @@ export default function ProductList() {
 
       {/* Lista de productos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {isLoadingRecommendations ? (
-          <div className="col-span-full text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700 mb-2"></div>
-            <p>Obteniendo recomendaciones personalizadas...</p>
-          </div>
-        ) : displayedProducts.length === 0 ? (
+        {displayedProducts.length === 0 ? (
           <p className="col-span-full text-center py-8">No se encontraron productos que coincidan con tu búsqueda</p>
         ) : (
           displayedProducts.map((product) => (
@@ -362,12 +236,6 @@ export default function ProductList() {
                 <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold z-10 flex items-center">
                   <Tag className="h-3 w-3 mr-1" />
                   {product.promocion.descuento}% OFF
-                </div>
-              )}
-              {showingRecommendations && (
-                <div className="absolute top-2 left-2 bg-purple-500 text-white px-2 py-1 rounded-md text-xs font-bold z-10 flex items-center">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  Recomendado
                 </div>
               )}
               <Link href={`/producto/${product.id_producto}`}>

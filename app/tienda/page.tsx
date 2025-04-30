@@ -1,7 +1,7 @@
-import ProductList from "@/components/product-list"
 import NavBar from "@/components/nav-bar"
 import ChatWidget from "@/components/chat-widget"
 import Footer from "@/components/footer"
+import ProductList from "@/components/product-list"
 
 export default function TiendaPage() {
   return (
