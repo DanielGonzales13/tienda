@@ -313,7 +313,7 @@ export default function ChatWidget() {
               headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json",
-                Authorization: "Bearer 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", // ¡Reemplaza con tu API Key real!
+                Authorization: "Bearer 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", 
               },
               body: JSON.stringify(requestBody),
             });

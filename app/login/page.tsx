@@ -37,7 +37,8 @@ export default function LoginPage() {
 
       if (response.ok) {
         // Guardar token o información de sesión
-        localStorage.setItem("id_usuario", data.usuario.id_usuario)
+        localStorage.setItem("id_usuario", data.usuario.id_usuario);
+        localStorage.setItem("nombre_usuario", data.usuario.nombre);
         setMessage("Inicio de sesión exitoso. Redirigiendo...")
         setTimeout(() => router.push("/tienda"), 1000)
       } else {

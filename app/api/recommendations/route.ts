@@ -90,7 +90,7 @@ export async function POST(req: Request) {
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-            Authorization: "Bearer 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",
+            Authorization: "Bearer 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",
           },
           body: JSON.stringify(requestBody),
         })

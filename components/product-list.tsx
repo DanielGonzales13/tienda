@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/lib/cart-context"
-import { ChevronLeft, ChevronRight, Search, ShoppingBag, Tag, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, ShoppingBag, Tag, Sparkles, User } from 'lucide-react'
 import { urlBackend } from "@/lib/var"
 
 interface Promotion {
@@ -52,6 +52,8 @@ export default function ProductList() {
   // Paginación
   const [currentPage, setCurrentPage] = useState(1)
   const productsPerPage = 8
+
+  const nombre_user = localStorage.getItem("nombre_usuario");
 
   useEffect(() => {
     // Obtener ID de usuario del localStorage
@@ -329,7 +331,7 @@ export default function ProductList() {
       {showingRecommendations && (
         <div className="mb-4 p-2 bg-purple-100 rounded-lg text-purple-800 text-sm flex items-center">
           <Sparkles className="h-4 w-4 mr-2" />
-          Mostrando recomendaciones personalizadas basadas en tu historial
+          Mostrando recomendaciones personalizadas basadas en tu historial, {nombre_user}
           <Button
             variant="ghost"
             size="sm"
