@@ -1,11 +1,14 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useCart } from "@/lib/cart-context"
-import { ShoppingBag, Tag } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, ShoppingBag, Tag } from "lucide-react"
 import { urlBackend } from "@/lib/var"
 
 interface Promotion {
@@ -34,12 +37,18 @@ interface Product {
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { addToCart } = useCart()
   const [message, setMessage] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1)
+  const productsPerPage = 8
 
   useEffect(() => {
     async function fetchProducts() {
@@ -70,18 +79,41 @@ export default function ProductList() {
     fetchProducts()
   }, [])
 
-  // Filtrar productos cuando cambia la categoría seleccionada
+  // Filtrar productos cuando cambia la categoría seleccionada o el término de búsqueda
   useEffect(() => {
-    if (selectedCategory === null) {
-      setFilteredProducts(products)
-    } else {
-      const filtered = products.filter((product) => product.categoria.id_categoria === selectedCategory)
-      setFilteredProducts(filtered)
+    let result = products
+
+    // Filtrar por categoría
+    if (selectedCategory !== null) {
+      result = result.filter((product) => product.categoria.id_categoria === selectedCategory)
     }
-  }, [selectedCategory, products])
+
+    // Filtrar por término de búsqueda
+    if (searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase().trim()
+      result = result.filter(
+        (product) =>
+          product.nombre.toLowerCase().includes(term) || product.categoria.descripcion.toLowerCase().includes(term),
+      )
+    }
+
+    setFilteredProducts(result)
+    setCurrentPage(1) // Resetear a la primera página cuando cambian los filtros
+  }, [selectedCategory, products, searchTerm])
+
+  // Actualizar productos mostrados basados en la paginación
+  useEffect(() => {
+    const indexOfLastProduct = currentPage * productsPerPage
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage
+    setDisplayedProducts(filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct))
+  }, [filteredProducts, currentPage])
 
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategory(categoryId)
+  }
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value)
   }
 
   const handleAddToCart = async (product: Product) => {
@@ -115,6 +147,23 @@ export default function ProductList() {
     }
   }
 
+  // Funciones de paginación
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage)
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
   if (isLoading) {
     return <p className="text-center py-8">Cargando productos...</p>
   }
@@ -130,6 +179,20 @@ export default function ProductList() {
           {message}
         </div>
       )}
+
+      {/* Barra de búsqueda */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Input
+            type="text"
+            placeholder="Buscar productos..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="pl-10 w-full"
+          />
+        </div>
+      </div>
 
       {/* Filtro de categorías horizontal */}
       <div className="mb-6">
@@ -157,12 +220,17 @@ export default function ProductList() {
         </div>
       </div>
 
+      {/* Contador de resultados */}
+      <div className="mb-4 text-sm text-gray-500">
+        Mostrando {displayedProducts.length} de {filteredProducts.length} productos
+      </div>
+
       {/* Lista de productos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredProducts.length === 0 ? (
-          <p className="col-span-full text-center py-8">No hay productos en esta categoría</p>
+        {displayedProducts.length === 0 ? (
+          <p className="col-span-full text-center py-8">No se encontraron productos que coincidan con tu búsqueda</p>
         ) : (
-          filteredProducts.map((product) => (
+          displayedProducts.map((product) => (
             <Card key={product.id_producto} className="card-hover overflow-hidden border-0 shadow-sm relative">
               {product.promocion && (
                 <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold z-10 flex items-center">
@@ -207,6 +275,35 @@ export default function ProductList() {
           ))
         )}
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-8 gap-2">
+          <Button
+            variant="outline"
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
+            className="flex items-center gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+          </Button>
+
+          <div className="mx-4 text-sm">
+            Página {currentPage} de {totalPages}
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-1"
+          >
+            Siguiente
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </>
   )
 }

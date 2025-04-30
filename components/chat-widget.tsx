@@ -61,7 +61,7 @@ export default function ChatWidget() {
       $(chatContainer).toggle()
 
       if (!window.Data) {
-        $.get(`${urlBackend}/api`)
+        $.get(`${urlBackend}/api/v2`)
           .done((data: any) => {
             window.Data = data
             window.dataDisponible = true
@@ -80,8 +80,8 @@ export default function ChatWidget() {
       }
     })
 
-    function sendMessage() {
-      $.get(`${urlBackend}/api`)
+    async function sendMessage() {
+      $.get(`${urlBackend}/api/v2`)
         .done((data: any) => {
           window.Data = data
           window.dataDisponible = true
@@ -93,7 +93,7 @@ export default function ChatWidget() {
 
       const pathname = window.location.pathname
       const url = window.location.href.replace(pathname, "")
-      const isAdmin = pathname.includes("/admin") // Check if user is in admin section
+      const isAdmin = pathname.includes("/admin") 
 
       const userText = $("#user-input").val()?.toString().trim() || ""
       if (userText === "") return
@@ -105,7 +105,6 @@ export default function ChatWidget() {
       $("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight)
       $("#user-input").val("")
 
-      // Create base prompts that are common for both admin and regular users
       const commonPrompts = [
         {
           role: "system",
@@ -137,15 +136,13 @@ export default function ChatWidget() {
         {
           role: "system",
           content:
-            "IMPORTANTE: Cuando necesites incluir enlaces, usa HTML directo como <a href='URL'>texto</a> en lugar de formato Markdown [texto](url).",
+            "IMPORTANTE: Cuando necesites incluir enlaces, usa HTML directo como <a href='URL' style='text-decoration:underline; color:blue'>texto</a> en lugar de formato Markdown [texto](url).",
         },
       ]
 
-      // Create specific prompts based on whether user is in admin section or not
       let contextSpecificPrompts = []
 
       if (isAdmin) {
-        // Admin-specific prompts
         contextSpecificPrompts = [
           {
             role: "system",
@@ -187,19 +184,19 @@ export default function ChatWidget() {
           },
           {
             role: "user",
-            content: "Para ir a producto usa HTML: <a href='" + url + "/admin/productos/ID_PRODUCTO'>Ver producto</a>",
+            content: "Para ir a producto usa HTML: <a href='" + url + "/admin/productos/ID_PRODUCTO' style='text-decoration:underline; color:blue'>Ver producto</a>",
           },
           {
             role: "user",
             content:
-              "Para ir al detalle de la orden usa HTML: <a href='" + url + "/admin/ordenes/ID_ORDEN'>Ver orden</a>",
+              "Para ir al detalle de la orden usa HTML: <a href='" + url + "/admin/ordenes/ID_ORDEN' style='text-decoration:underline; color:blue'>Ver orden</a>",
           },
           {
             role: "user",
             content:
               "Para ir al detalle del usuario usa HTML: <a href='" +
               url +
-              "/admin/usuarios/ID_USUARIO'>Ver usuario</a>",
+              "/admin/usuarios/ID_USUARIO' style='text-decoration:underline; color:blue'>Ver usuario</a>",
           },
           {
             role: "user",
@@ -207,14 +204,11 @@ export default function ChatWidget() {
           },
         ]
       } else {
-        // Regular user-specific prompts
-        // Filter data to only include information relevant to this user
         const userCarts = window?.Data?.carritos?.filter((cart: any) => {
           return cart.usuario.id_usuario.toString() === id_user?.toString()
         }) || []
         const userOrders =
           window?.Data?.orden_compras?.filter((order: any) => {
-            // Convert both IDs to strings for comparison to avoid type mismatches
             return order.usuario.id_usuario.toString() === id_user?.toString()
           }) || []
         const userData = window?.Data?.usuarios?.find((user: any) => user.id_usuario.toString() === id_user?.toString())
@@ -250,15 +244,15 @@ export default function ChatWidget() {
           },
           {
             role: "user",
-            content: "Para ir a producto usa HTML: <a href='" + url + "/producto/ID_PRODUCTO'>Ver producto</a>",
+            content: "Para ir a producto usa HTML: <a href='" + url + "/producto/ID_PRODUCTO' style='text-decoration:underline; color:blue'>Ver producto</a>",
           },
           {
             role: "user",
-            content: "Para ir a carrito usa HTML: <a href='" + url + "/carrito'>Ver carrito</a>",
+            content: "Para ir a carrito usa HTML: <a href='" + url + "/carrito' style='text-decoration:underline; color:blue'>Ver carrito</a>",
           },
           {
             role: "user",
-            content: "Para ir a mis órdenes usa HTML: <a href='" + url + "/mis-ordenes'>Ver mis órdenes</a>",
+            content: "Para ir a mis órdenes usa HTML: <a href='" + url + "/mis-ordenes' style='text-decoration:underline; color:blue'>Ver mis órdenes</a>",
           },
           {
             role: "user",
@@ -267,7 +261,6 @@ export default function ChatWidget() {
         ]
       }
 
-      // Combine common and context-specific prompts
       const allPrompts = [
         ...commonPrompts,
         ...contextSpecificPrompts
@@ -276,16 +269,17 @@ export default function ChatWidget() {
       const requestBody = {
         model: "google/gemini-2.0-flash-exp:free",
         messages: allPrompts,
+        stream: true
       }
 
       console.log("Mensajes enviados al modelo:", requestBody.messages)
 
-      fetch("https://openrouter.ai/api/v1/chat/completions", {
+     /*  fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: "Bearer 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",
+          Authorization: "Bearer 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",
         },
         body: JSON.stringify(requestBody),
       })
@@ -293,14 +287,12 @@ export default function ChatWidget() {
         .then((data) => {
           $("#loading-message").remove()
           let message = data.choices[0].message.content.replace(/\n/g, " <br /> ")
+          message = message.replace(/\*\*(.*?)\*\*///g, '<b>$1</b>');
+          //message = message.replace(
+           // /\[([^\]]+)\]$$([^)]+)$$/g,
+            //'<a href="$2" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
+          /*)
 
-          // Fix for Markdown-style links [text](url)
-          message = message.replace(
-            /\[([^\]]+)\]$$([^)]+)$$/g,
-            '<a href="$2" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
-          )
-
-          // Fix for plain URLs
           message = message.replace(
             /(?<![='"(])(https?:\/\/[^\s<]+)/g,
             '<a href="$1" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
@@ -312,7 +304,115 @@ export default function ChatWidget() {
         .catch((error) => {
           $("#loading-message").remove()
           $("#chat-messages").append(`<div class='bot-message'>Error al obtener respuesta.</div>`)
-        })
+        }) */
+
+
+          try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: "Bearer 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", // ¡Reemplaza con tu API Key real!
+              },
+              body: JSON.stringify(requestBody),
+            });
+      
+            if (!response.ok) {
+              $("#loading-message").remove();
+              $("#chat-messages").append(`<div class='bot-message'>Error al obtener respuesta. Código: ${response.status}</div>`);
+              return;
+            }
+      
+            const reader = response?.body?.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let partialMessage = "";
+
+            let mensajecompleto = "";
+            let mensajecompleto2 = "";
+            const botMessageDiv = $(`<div class='bot-message'></div>`).appendTo("#chat-messages");
+      
+            while (true) {
+              const { done, value } : any = await reader?.read();
+      
+              if (done) {
+                break;
+              }
+      
+              const chunk = decoder.decode(value);
+              partialMessage += chunk;
+      
+              // Procesar los chunks para extraer el contenido y aplicar formato
+              let lines = partialMessage.split('\n').filter(line => line.trim() !== '');
+              for (const line of lines) {
+                if (line.startsWith('data:')) {
+                  try {
+                    console.log(line);
+                    const json = JSON.parse(line.substring(5).trim());
+                    if (json.choices && json.choices[0] && json.choices[0].delta && json.choices[0].delta.content) {
+                      let content = json.choices[0].delta.content;
+                      //content = content.replace(/\n/g, " <br /> ");
+                      //content = content.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                      //content = content.replace(
+                      //  /\[([^\]]+)\]\$\$([^)]+)\$\$/g,
+                      //  '<a href="$2" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
+                      //);
+                      //content = content.replace(
+                       // /(?<![='"(])(https?:\/\/[^\s<]+)/g,
+                        //'<a href="$1" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
+                      //);
+                      mensajecompleto += content;
+                      mensajecompleto2 = mensajecompleto;
+                      mensajecompleto2 = mensajecompleto2.replace(/\n/g, " <br /> ");
+                      mensajecompleto2 = mensajecompleto2.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                      mensajecompleto2 = mensajecompleto2.replace(
+                        /\[([^\]]+)\]\$\$([^)]+)\$\$/g,
+                        '<a href="$2" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
+                      );
+                      mensajecompleto2 = mensajecompleto2.replace(
+                        /(?<![='"(])(https?:\/\/[^\s<]+)/g,
+                        '<a href="$1" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
+                      );
+                      
+                      botMessageDiv.html(mensajecompleto2);
+                      $("#chat-messages").scrollTop($("#chat-messages")[0].scrollHeight);
+                    }
+                  } catch (error) {
+                    console.error("Error al parsear el chunk:", error, line);
+                  }
+                  partialMessage = ""; // Reiniciar el buffer parcial después de procesar un evento 'data' completo
+                } else if (line.startsWith('error:')) {
+                  $("#loading-message").remove();
+                  const errorJson = JSON.parse(line.substring(6).trim());
+                  $("#chat-messages").append(`<div class='bot-message'>Error de OpenRouter: ${errorJson.message || 'Desconocido'}</div>`);
+                  reader?.cancel(); // Detener la lectura si hay un error
+                  return;
+                } else if (line.startsWith('done:')) {
+                  $("#loading-message").remove();
+                  break; // Fin del stream
+                }
+              }
+            }
+            mensajecompleto = mensajecompleto.replace(/\n/g, " <br /> ");
+            mensajecompleto = mensajecompleto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+            mensajecompleto = mensajecompleto.replace(
+              /\[([^\]]+)\]\$\$([^)]+)\$\$/g,
+              '<a href="$2" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
+            );
+            mensajecompleto = mensajecompleto.replace(
+              /(?<![='"(])(https?:\/\/[^\s<]+)/g,
+            '<a href="$1" target="_blank" style="text-decoration:underline; color:blue">$1</a>',
+            );
+
+
+            botMessageDiv.html(mensajecompleto);
+            console.log(mensajecompleto);
+
+            $("#loading-message").remove(); // Asegurarse de remover el mensaje de carga al final
+          } catch (error) {
+            $("#loading-message").remove();
+            $("#chat-messages").append(`<div class='bot-message'>Error al obtener respuesta: ${error}</div>`);
+          }
     }
   }
 
