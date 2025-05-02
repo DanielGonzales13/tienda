@@ -13,6 +13,9 @@ interface Product {
   precio: number
   descripcion: string
   imagen: string
+  categoria?: {
+    descripcion: string
+  }
 }
 
 export default function ProductDetail({ id }: { id: string }) {
@@ -105,13 +108,17 @@ export default function ProductDetail({ id }: { id: string }) {
       const imageUrl = product.imagen
       setDebugInfo(`Intentando analizar imagen: ${imageUrl}`)
 
-      const response = await fetch("/api/image-analysis", {
+      // Enviar nombre, categoría y descripción del producto junto con la URL de la imagen
+      const response = await fetch(`${window.location.origin}/api/image-analysis`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           imageUrl: imageUrl,
+          productName: product.nombre,
+          productCategory: product.categoria?.descripcion || "producto",
+          productDescription: product.descripcion,
         }),
       })
 
@@ -128,22 +135,13 @@ export default function ProductDetail({ id }: { id: string }) {
       }
 
       setAiDescription(data.description)
-      setDebugInfo(null)
+      setDebugInfo(data.note || null)
     } catch (err) {
       console.error("Error al analizar la imagen:", err)
       setAnalysisError(err instanceof Error ? err.message : "Error al analizar la imagen")
     } finally {
       setIsAnalyzingImage(false)
     }
-  }
-
-  // Función alternativa para usar una descripción de prueba
-  const useFallbackDescription = () => {
-    setAiDescription(
-      "Este elegante producto combina funcionalidad y estilo con materiales de alta calidad y un diseño atractivo. Su acabado detallado y construcción duradera garantizan una excelente relación calidad-precio. Perfecto para uso diario, este artículo versátil complementará perfectamente su estilo personal.",
-    )
-    setAnalysisError(null)
-    setDebugInfo(null)
   }
 
   if (isLoading) {
@@ -187,10 +185,6 @@ export default function ProductDetail({ id }: { id: string }) {
                 <ImageIcon className="h-4 w-4" />
                 Generar descripción con IA
               </Button>
-              <Button variant="ghost" onClick={useFallbackDescription} className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Usar descripción de prueba
-              </Button>
             </div>
           )}
 
@@ -198,14 +192,14 @@ export default function ProductDetail({ id }: { id: string }) {
           {isAnalyzingImage && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Analizando imagen...</span>
+              <span>Analizando imagen y datos del producto...</span>
             </div>
           )}
 
           {/* Información de depuración */}
           {debugInfo && (
             <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-mono overflow-auto max-h-32">
-              <p className="font-semibold mb-1">Información de depuración:</p>
+              <p className="font-semibold mb-1">Información:</p>
               {debugInfo}
             </div>
           )}
@@ -220,7 +214,6 @@ export default function ProductDetail({ id }: { id: string }) {
                   <RefreshCw className="h-3 w-3" />
                   Reintentar
                 </Button>
-               
               </div>
             </div>
           )}
@@ -233,6 +226,19 @@ export default function ProductDetail({ id }: { id: string }) {
                 Descripción generada por IA
               </h3>
               <p className="text-sm text-gray-700 dark:text-gray-300">{aiDescription}</p>
+              <div className="mt-3 flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAiDescription(null)
+                    setDebugInfo(null)
+                  }}
+                  className="text-xs text-purple-600 hover:text-purple-800"
+                >
+                  Generar otra descripción
+                </Button>
+              </div>
             </div>
           )}
 

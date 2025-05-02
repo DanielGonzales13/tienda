@@ -1,14 +1,20 @@
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { imageUrl } = body
+    const { imageUrl, productName, productCategory, productDescription } = body
 
     if (!imageUrl) {
       console.log("Error: URL de imagen no proporcionada")
       return Response.json({ error: "URL de imagen no proporcionada" }, { status: 400 })
     }
 
+    if (!productName) {
+      console.log("Error: Nombre de producto no proporcionado")
+      return Response.json({ error: "Nombre de producto no proporcionado" }, { status: 400 })
+    }
+
     console.log("Procesando imagen:", imageUrl)
+    console.log("Datos del producto:", { productName, productCategory, productDescription })
 
     // Verificar si la URL es accesible
     try {
@@ -22,14 +28,26 @@ export async function POST(req: Request) {
       return Response.json({ error: "No se puede acceder a la URL de la imagen" }, { status: 400 })
     }
 
-    // Intentar con un enfoque alternativo usando solo texto descriptivo
+    // Enviar solicitud a la API con todos los datos
     try {
-      console.log("Usando enfoque alternativo para describir la imagen")
+      console.log("Enviando solicitud a OpenRouter con imagen y datos del producto")
+
+      // Crear un prompt que incluya toda la información disponible
+      const promptText = `Genera una descripción detallada y atractiva para un producto llamado "${productName}" que pertenece a la categoría "${productCategory || "producto"}".
       
-      // Extraer información del contexto (nombre del producto)
-      const productName = body.productName || "producto"
-      const productCategory = body.productCategory || "artículo"
+      Información adicional del producto: "${productDescription || "No disponible"}"
       
+      La descripción debe:
+      - Tener entre 3-5 oraciones
+      - Destacar posibles características, beneficios y usos
+      - Ser persuasiva y profesional
+      - No mencionar que es una descripción generada
+      - Enfocarse en la calidad, diseño y valor del producto
+      - Complementar la descripción original, no repetirla
+      - Usar la imagen para identificar características visuales
+      
+      Responde SOLO con la descripción, sin introducción ni comentarios adicionales.`
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -42,21 +60,23 @@ export async function POST(req: Request) {
           messages: [
             {
               role: "system",
-              content: `Eres un especialista en marketing y descripción de productos. Tu tarea es crear descripciones detalladas, atractivas y persuasivas para productos de e-commerce.`
+              content: `Eres un especialista en marketing y descripción de productos. Tu tarea es crear descripciones detalladas, atractivas y persuasivas para productos de e-commerce basadas en imágenes y datos del producto.`,
             },
             {
               role: "user",
-              content: `Genera una descripción detallada y atractiva para un producto llamado "${productName}" que pertenece a la categoría "${productCategory}". 
-              
-              La descripción debe:
-              - Tener entre 3-5 oraciones
-              - Destacar posibles características, beneficios y usos
-              - Ser persuasiva y profesional
-              - No mencionar que es una descripción generada
-              - Enfocarse en la calidad, diseño y valor del producto
-              
-              Responde SOLO con la descripción, sin introducción ni comentarios adicionales.`
-            }
+              content: [
+                {
+                  type: "text",
+                  text: promptText,
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: imageUrl,
+                  },
+                },
+              ],
+            },
           ],
           stream: false,
         }),
@@ -85,9 +105,9 @@ export async function POST(req: Request) {
       }
 
       const generatedDescription = data.choices[0].message.content
-      return Response.json({ 
+      return Response.json({
         description: generatedDescription,
-        note: "Descripción generada basada en el nombre y categoría del producto"
+        note: "Descripción generada basada en la imagen y datos del producto",
       })
     } catch (apiError) {
       console.log("Error al comunicarse con OpenRouter:", apiError)
