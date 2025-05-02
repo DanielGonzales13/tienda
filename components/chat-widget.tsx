@@ -44,7 +44,7 @@ export default function ChatWidget() {
     chatContainer.id = "chat-container"
     const isAdmin = window.location.pathname.includes("/admin/")
     chatContainer.innerHTML = `
-  <div id="chat-header">Asistente ${isAdmin ? "de Administración ✨" : "Virtual ✈️"}</div>
+  <div id="chat-header">Asistente ${isAdmin ? "de Administración ✨" : "Virtual 🤖"}</div>
   <div id="chat-messages"></div>
   <div id="chat-input">
     <input type="text" id="user-input" placeholder="${isAdmin ? "Consulta sobre estadísticas, ventas o usuarios..." : "Escribe tu pregunta..."}">
