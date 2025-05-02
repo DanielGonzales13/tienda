@@ -252,7 +252,7 @@ export default function ChatWidget() {
           },
           {
             role: "user",
-            content: "Para ir a mis órdenes usa HTML: <a href='" + url + "/mis-ordenes' style='text-decoration:underline; color:blue'>Ver mis órdenes</a>",
+            content: "Para ir a mis órdenes usa HTML: <a href='" + url + "/mis-compras' style='text-decoration:underline; color:blue'>Ver mis órdenes</a>",
           },
           {
             role: "user",
@@ -267,7 +267,8 @@ export default function ChatWidget() {
       ]
 
       const requestBody = {
-        model: "google/gemini-2.0-flash-exp:free",
+        //model: "google/gemini-2.0-flash-exp:free",
+        model: "meta-llama/llama-4-maverick:free",
         messages: allPrompts,
         stream: true
       }

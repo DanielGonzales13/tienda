@@ -1,3 +1,5 @@
+import { urlBackend } from "@/lib/var"
+
 export async function POST(req: Request) {
     try {
       const body = await req.json()
@@ -9,9 +11,8 @@ export async function POST(req: Request) {
   
       // Intentar obtener datos del usuario desde el backend
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"
   
-        const userDataResponse = await fetch(`${backendUrl}/api/v2`, {
+        const userDataResponse = await fetch(`${urlBackend}/api/v2`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
         }
   
         const userData = await userDataResponse.json()
-  
+
         // Filtrar datos específicos del usuario
         const userCarts =
           userData?.carritos?.filter((cart: any) => {
@@ -78,7 +79,6 @@ export async function POST(req: Request) {
             content: `Basado en el historial de compras y carrito del usuario, recomienda productos que podrían interesarle. Si no hay historial suficiente, recomienda productos populares o destacados.`,
           },
         ]
-  
         const requestBody = {
           model: "google/gemini-2.0-flash-exp:free",
           messages: commonPrompts,
@@ -100,7 +100,6 @@ export async function POST(req: Request) {
         }
   
         const data = await response.json()
-  
         let productIds
   
         try {
