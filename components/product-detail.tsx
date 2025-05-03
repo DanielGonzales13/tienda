@@ -115,7 +115,7 @@ export default function ProductDetail({ id }: { id: string }) {
     - No mencionar que es una descripción generada
     - Enfocarse en la calidad, diseño y valor del producto
     - Complementar la descripción original, no repetirla
-    - Usar la imagen para identificar características visuales
+    - Usar la imagen para identificar características visuales, en las cuales debes enfocarte con prioridad, dejando la descripción del producto en segundo plano
     
     Responde SOLO con la descripción, sin introducción ni comentarios adicionales.`
 
