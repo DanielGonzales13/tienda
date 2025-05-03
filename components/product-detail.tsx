@@ -99,50 +99,83 @@ export default function ProductDetail({ id }: { id: string }) {
   const analyzeProductImage = async () => {
     if (!product || !product.imagen) return
 
-    setIsAnalyzingImage(true)
-    setAnalysisError(null)
-    setDebugInfo(null)
+  setIsAnalyzingImage(true)
+  setAnalysisError(null)
+  setDebugInfo(null)
 
-    try {
-      // Verificar si la URL de la imagen es válida
-      const imageUrl = product.imagen
-      setDebugInfo(`Intentando analizar imagen: ${imageUrl}`)
+  try {
+    const promptText = `Genera una descripción detallada y atractiva para un producto llamado "${product.nombre}" que pertenece a la categoría "${product.categoria?.descripcion || "producto"}".
+    
+    Información adicional del producto: "${product.descripcion || "No disponible"}"
+    
+    La descripción debe:
+    - Tener entre 3-5 oraciones
+    - Destacar posibles características, beneficios y usos
+    - Ser persuasiva y profesional
+    - No mencionar que es una descripción generada
+    - Enfocarse en la calidad, diseño y valor del producto
+    - Complementar la descripción original, no repetirla
+    - Usar la imagen para identificar características visuales
+    
+    Responde SOLO con la descripción, sin introducción ni comentarios adicionales.`
 
-      // Enviar nombre, categoría y descripción del producto junto con la URL de la imagen
-      const response = await fetch(`${window.location.origin}/api/image-analysis`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          imageUrl: imageUrl,
-          productName: product.nombre,
-          productCategory: product.categoria?.descripcion || "producto",
-          productDescription: product.descripcion,
-        }),
-      })
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: "Bearer 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", 
+      },
+      body: JSON.stringify({
+        model: "meta-llama/llama-4-scout:free",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Eres un especialista en marketing y descripción de productos. Tu tarea es crear descripciones detalladas, atractivas y persuasivas para productos de e-commerce basadas en imágenes y datos del producto.",
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: promptText,
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: product.imagen,
+                },
+              },
+            ],
+          },
+        ],
+        stream: false,
+      }),
+    })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setDebugInfo(`Error HTTP ${response.status}: ${JSON.stringify(data)}`)
-        throw new Error(data.error || "Error al analizar la imagen")
-      }
-
-      if (data.error) {
-        setDebugInfo(`Error en respuesta: ${data.error}`)
-        throw new Error(data.error)
-      }
-
-      setAiDescription(data.description)
-      setDebugInfo(data.note || null)
-    } catch (err) {
-      console.error("Error al analizar la imagen:", err)
-      setAnalysisError(err instanceof Error ? err.message : "Error al analizar la imagen")
-    } finally {
-      setIsAnalyzingImage(false)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      setDebugInfo(`Error HTTP ${response.status}: ${JSON.stringify(errorData)}`)
+      throw new Error("Error al comunicarse con OpenRouter")
     }
+
+    const data = await response.json()
+
+    const description = data?.choices?.[0]?.message?.content
+    if (!description) {
+      throw new Error("Respuesta inválida de OpenRouter")
+    }
+
+    setAiDescription(description)
+    setDebugInfo("Descripción generada correctamente")
+  } catch (err) {
+    console.error("Error al analizar la imagen:", err)
+    setAnalysisError(err instanceof Error ? err.message : "Error al analizar la imagen")
+  } finally {
+    setIsAnalyzingImage(false)
   }
+}
 
   if (isLoading) {
     return <p className="text-center py-8">Cargando producto...</p>
@@ -223,7 +256,7 @@ export default function ProductDetail({ id }: { id: string }) {
             <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-md border border-purple-200 dark:border-purple-800">
               <h3 className="text-lg font-medium flex items-center gap-2 mb-2 text-purple-700 dark:text-purple-300">
                 <ImageIcon className="h-4 w-4" />
-                Descripción generada por IA
+                Descripción generada por IA - <b>Visión por Computadora</b>
               </h3>
               <p className="text-sm text-gray-700 dark:text-gray-300">{aiDescription}</p>
               <div className="mt-3 flex justify-end">
